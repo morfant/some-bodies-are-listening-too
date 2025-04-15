@@ -1,22 +1,16 @@
-let audio, source, fft;
+let soundFile, fft;
 let started = false;
+
+function preload() {
+  soundFile = loadSound("https://locus.creacast.com:9443/jeju_georo.mp3");
+}
 
 function setup() {
   createCanvas(960, 512);
+  fft = new p5.FFT(0.9, 1024);
+  fft.setInput(soundFile);
   background(0);
   noStroke();
-
-  audio = new Audio("https://locus.creacast.com:9443/jeju_georo.mp3");
-  audio.crossOrigin = "anonymous";
-  audio.loop = true;
-  document.body.appendChild(audio); // 👈 Safari 필수일 수 있음
-
-  let context = getAudioContext();
-  source = context.createMediaElementSource(audio);
-  source.connect(context.destination);
-
-  fft = new p5.FFT();
-  fft.setInput(source);
 }
 
 function draw() {
@@ -30,7 +24,6 @@ function draw() {
   }
 
   let spectrum = fft.analyze();
-
   background(0, 20);
   fill(255);
   for (let i = 0; i < spectrum.length; i++) {
@@ -45,14 +38,9 @@ function draw() {
 }
 
 function mousePressed() {
-  if (getAudioContext().state !== 'running') {
-    getAudioContext().resume().then(() => {
-      console.log("AudioContext resumed");
-      audio.play();
-      started = true;
-    });
-  } else if (!started) {
-    audio.play();
+  if (!started) {
+    userStartAudio(); // Safari 대응
+    soundFile.loop(); // stream처럼 반복 재생
     started = true;
   }
 }
