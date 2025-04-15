@@ -34,6 +34,7 @@ function setup() {
     audio = new Audio("https://locus.creacast.com:9443/jeju_georo.mp3");
     audio.crossOrigin = "anonymous";
     audio.loop = true;
+    document.body.appendChild(audio); // ← Safari workaround
 
     let context = getAudioContext();
     source = context.createMediaElementSource(audio);
@@ -82,6 +83,10 @@ function draw() {
   }
 
   spectrum = fft.analyze();
+
+  if (frameCount % 60 === 0) {
+    console.log("spectrum[0]:", spectrum[0]);
+  }
 
   if (visualizeMode === 1) {
     // 🎧 bar 스타일
