@@ -43,17 +43,24 @@ function setup() {
 }
 
 function mousePressed() {
-  if (!started) {
-      background(0);
-    
-    if (!useMicInput) {
-      audio.play();
-      getAudioContext().resume();
-    } else {
-      getAudioContext().resume();
+if (getAudioContext().state !== 'running') {
+    getAudioContext().resume().then(() => {
+    console.log('AudioContext resumed');
+    if (!started) {
+        startAudio();
     }
-    started = true;
-  }
+    });
+} else if (!started) {
+    startAudio();
+}
+}
+
+function startAudio() {
+background(0);
+if (!useMicInput) {
+    audio.play();
+}
+started = true;
 }
 
 function keyPressed() {
