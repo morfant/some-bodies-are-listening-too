@@ -56,6 +56,20 @@ if (getAudioContext().state !== 'running') {
 }
 }
 
+function touchStarted() {
+  if (getAudioContext().state !== 'running') {
+    getAudioContext().resume().then(() => {
+      if (!started) {
+        startAudio();
+      }
+    });
+  } else if (!started) {
+    startAudio();
+  }
+  return false;
+}
+
+
 function startAudio() {
 background(0);
 if (!useMicInput) {
