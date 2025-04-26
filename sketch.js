@@ -14,10 +14,13 @@ let visualizeMode = 0;
 let useMicInput = false;
 let micAmp = 0.1;
 
+let graphPointUpdateInterval = 20;
 let startTime;
 let lastMessageFrame = -1000;
 let lastMessageX = null;
 let currentMessage = "";
+
+let firstMessageDelaySeconds = 30; // ✨ 첫 문장은 30초 후 등장
 let messageIntervalSeconds = 10;
 let messagePrintFrames = 20;
 let sentences = [];
@@ -27,8 +30,9 @@ let jitterAngle = 0;
 let koreanFont, englishFont;
 let graphPoints = []; // 🆕 파란 선 점들을 담는 배열
 
+
 function preload() {
-  sentences = loadStrings("sentences.txt");
+  sentences = loadStrings("sentences.txt?" + millis());
   koreanFont = loadFont("fonts/AppleMyungjo.ttf");
   englishFont = loadFont("fonts/Times New Roman.ttf");
 }
@@ -116,7 +120,7 @@ function draw() {
 
   if (visualizeMode === 0) {
     drawMainVisualization();
-    updateGraphPoints();
+    updateGraphPoints(graphPointUpdateInterval);
     drawGraphPoints();
     drawCurrentMessage();
 
@@ -177,7 +181,9 @@ function drawMainVisualization() {
   cnt++;
 }
 
-function updateGraphPoints() {
+function updateGraphPoints(interval = 1) {
+  if (frameCount % interval !== 0) return; // ✨ interval 프레임마다만 추가!
+
   let waveform = fft.waveform();
   let sampleIndex = Math.floor(waveform.length / 2);
   let sample = waveform[sampleIndex];
@@ -192,8 +198,9 @@ function updateGraphPoints() {
   }
 }
 
+
 function drawGraphPoints() {
-  stroke(0, 100, 200, 30);
+  stroke(0, 100, 200, 10);
   strokeWeight(0.5);
   noFill();
   beginShape();
@@ -204,20 +211,30 @@ function drawGraphPoints() {
 }
 
 function drawCurrentMessage() {
-  let intervalFrames = fps * messageIntervalSeconds;
-  if (frameCount % intervalFrames === 0 && sentences.length > 0) {
-    currentMessage = sentences[sentenceIndex];
-    lastMessageFrame = frameCount;
-    lastMessageX = width - cnt;
-    sentenceIndex = (sentenceIndex + 1) % sentences.length;
-    // ✨ 새 문장이 등장할 때만 새로운 jitterAngle 생성!
-    jitterAngle = radians(random(-3, 3)); 
+  let elapsedSeconds = (millis() / 1000);
+
+  if (sentenceIndex === 0) {
+    if (elapsedSeconds >= firstMessageDelaySeconds && currentMessage === "") {
+      currentMessage = sentences[sentenceIndex];
+      lastMessageFrame = frameCount;
+      lastMessageX = width - cnt;
+      sentenceIndex = (sentenceIndex + 1) % sentences.length;
+      jitterAngle = radians(random(-3, 3));
+    }
+  } else {
+    let intervalFrames = fps * messageIntervalSeconds;
+    if ((frameCount - lastMessageFrame) >= intervalFrames && sentences.length > 0) {
+      currentMessage = sentences[sentenceIndex];
+      lastMessageFrame = frameCount;
+      lastMessageX = width - cnt;
+      sentenceIndex = (sentenceIndex + 1) % sentences.length;
+      jitterAngle = radians(random(-3, 3));
+    }
   }
 
   if (frameCount - lastMessageFrame < messagePrintFrames) {
     push();
     translate(lastMessageX, height-22);
-
     rotate(-HALF_PI + jitterAngle);
     textFont(/[ㄱ-ㆎ|가-힣]/.test(currentMessage) ? koreanFont : englishFont);
     fill(0, 0, 0, constrain((frameCount-lastMessageFrame)/messagePrintFrames * 255, 0, 255));
