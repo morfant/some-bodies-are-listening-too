@@ -182,62 +182,62 @@ function drawMainVisualization() {
   cnt++;
 }
 
-// function updateGraphPoints(interval = 1) {
-//   if (frameCount % interval !== 0) return; // ✨ interval 프레임마다만 추가!
-
-//   let waveform = fft.waveform();
-//   let sampleIndex = Math.floor(waveform.length / 2);
-//   let sample = waveform[sampleIndex];
-
-//   let gx = frameCount % (width + 1);
-//   let gy = map(sample, -1, 1, height * 0.02, height * 0.8);
-
-//   graphPoints.push({x: gx, y: gy - height*0.4});
-
-//   if (graphPoints.length > width) {
-//     graphPoints.shift();
-//   }
-// }
-
 function updateGraphPoints(interval = 1) {
-  if (frameCount % interval !== 0) return;
+  if (frameCount % interval !== 0) return; // ✨ interval 프레임마다만 추가!
 
   let waveform = fft.waveform();
   let sampleIndex = Math.floor(waveform.length / 2);
   let sample = waveform[sampleIndex];
 
-  let gx = cnt % width; // ✨ cnt 기준으로
+  let gx = frameCount % (width + 1);
   let gy = map(sample, -1, 1, height * 0.02, height * 0.8);
-  gy -= height * 0.4;
 
-  // ✨ 텍스트 인력 효과
-  let attractPower = 8000; // 인력 크기 설정
-  let attractRange = 40; // 인력 작용 범위
-  let d = abs(gx - lastMessageX);
-
-  if (d < attractRange && lastMessageX != null) {
-    isInRange = true;
-    let force = attractPower / (d + 10); // 거리 가까울수록 세게
-    gy += force; // 위로 끌어당긴다 (반대로 force를 더하면 아래로 밀림)
-  } else {
-    isInRange = false;
-  }
-
-
-  if (gx != 0) graphPoints.push({x: gx, y: gy});
+  graphPoints.push({x: gx, y: gy - height*0.4});
 
   if (graphPoints.length > width) {
     graphPoints.shift();
   }
 }
 
+// function updateGraphPoints(interval = 1) {
+//   if (frameCount % interval !== 0) return;
+
+//   let waveform = fft.waveform();
+//   let sampleIndex = Math.floor(waveform.length / 2);
+//   let sample = waveform[sampleIndex];
+
+//   let gx = cnt % width; // ✨ cnt 기준으로
+//   let gy = map(sample, -1, 1, height * 0.02, height * 0.8);
+//   gy -= height * 0.4;
+
+//   // ✨ 텍스트 인력 효과
+//   let attractPower = 8000; // 인력 크기 설정
+//   let attractRange = 40; // 인력 작용 범위
+//   let d = abs(gx - lastMessageX);
+
+//   if (d < attractRange && lastMessageX != null) {
+//     isInRange = true;
+//     let force = attractPower / (d + 10); // 거리 가까울수록 세게
+//     gy += force; // 위로 끌어당긴다 (반대로 force를 더하면 아래로 밀림)
+//   } else {
+//     isInRange = false;
+//   }
+
+
+//   if (gx != 0) graphPoints.push({x: gx, y: gy});
+
+//   if (graphPoints.length > width) {
+//     graphPoints.shift();
+//   }
+// }
+
 
 function drawGraphPoints() {
   // stroke(0, 100, 200, 10);
 
-  let rad = 2;
-  if (!isInRange) { fill(0, 100, 200, 5); rad = 2;
-  } else { fill(0, 100, 200, 10); rad = 2;}
+  let rad = 3;
+  if (!isInRange) { fill(0, 100, 200, 5);
+  } else { fill(0, 100, 200, 10);}
 
   // strokeWeight(0.5);
   noStroke();
