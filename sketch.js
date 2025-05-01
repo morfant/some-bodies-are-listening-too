@@ -179,12 +179,12 @@ function drawStartScreen() {
   textAlign(CENTER, CENTER);
   strokeWeight(0.1);
 
-  textFont(englishFont2); // ✅ 여기에서 폰트 적용
-
+  textFont(englishFont);
+  textSize(30);
   let workTitle = "Some-bodies are listening, too";
-  textSize(24);
   text(workTitle, width/2, height/2 - 220);
 
+  textFont(englishFont2);
   textSize(22);
   let nowStr = getFormattedKoreanTime();
   text(nowStr, width/2, height/2 + 40);
