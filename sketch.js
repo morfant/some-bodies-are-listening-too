@@ -14,7 +14,7 @@ let visualizeMode = 0;
 let useMicInput = false;
 let micAmp = 0.1;
 
-let graphPointUpdateInterval = 2;
+let graphPointUpdateInterval = 1;
 let startTime;
 let lastMessageFrame = -1000;
 let lastMessageX = null;
@@ -35,10 +35,10 @@ let graphPoints = []; // 🆕 파란 선 점들을 담는 배열
 
 let fadeOutCounter = 0;
 
-let fpsPerLoop = 0;
-let maxLoopCount = 0;
-let pointsPerLoop = 0;
-let maxPointsLength = 0;
+// let fpsPerLoop = 0;
+// let maxLoopCount = 0;
+// let pointsPerLoop = 0;
+// let maxPointsLength = 0;
 
 
 function preload() {
@@ -46,7 +46,7 @@ function preload() {
   koreanFont = loadFont("fonts/AppleMyungjo.ttf");
   englishFont = loadFont("fonts/Times New Roman.ttf");
   englishFont2 = loadFont("fonts/NotoSansKR-Thin.otf");
-  englishFont3 = loadFont("fonts/NotoSansDisplay-VariableFont_wdth,wght.ttf");
+  // englishFont3 = loadFont("fonts/NotoSansDisplay-VariableFont_wdth,wght.ttf");
 }
 
 function setup() {
@@ -58,10 +58,10 @@ function setup() {
   visualizeMul = width;
   fft = new p5.FFT(0.9, bands);
 
-  fpsPerLoop = width;
-  maxLoopCount = sentences.length * fps * messageIntervalSeconds / fpsPerLoop;
-  pointsPerLoop = fpsPerLoop / graphPointUpdateInterval; 
-  maxPointsLength = maxLoopCount * pointsPerLoop;
+  // fpsPerLoop = width;
+  // maxLoopCount = sentences.length * fps * messageIntervalSeconds / fpsPerLoop;
+  // pointsPerLoop = fpsPerLoop / graphPointUpdateInterval; 
+  // maxPointsLength = maxLoopCount * pointsPerLoop;
 
   graphPoints.push({x: 0, y: 6});
 
@@ -93,7 +93,7 @@ function setup() {
 
     // ✨ Gain 노드 2: 분석용
     let gainFFT = context.createGain();
-    gainFFT.gain.value = 0.6;
+    gainFFT.gain.value = 0.8;
     source.connect(gainFFT);
     fft.setInput(gainFFT);
   }
@@ -155,21 +155,15 @@ function draw() {
     drawCurrentMessage();
 
     if (cnt >= width) {
-      fadeOutCounter = 30;  // ✨ 20프레임에 걸쳐 점진적으로 배경 지우기 시작
+      fadeOutCounter = 30;  // ✨ 30프레임에 걸쳐 점진적으로 배경 지우기 시작
       cnt = 0;
       loopCount++;
     }
 
     if (fadeOutCounter > 0) {
-      background(bgColor, 2/3);  // ✨ alpha 1씩 누적
+      background(bgColor, 2/3);  // ✨ alpha 2/3씩 누적
       fadeOutCounter--;
     }
-
-    // if (cnt >= width) {
-    //   background(bgColor, 20);
-    //   cnt = 0;
-    // }
-
   }
 }
 
@@ -262,88 +256,24 @@ function updateGraphPoints(interval = 1) {
   // print("sample: ", sample, " gx: ", gx, " gy: ", gy);
   graphPoints.push({x: gx, y: adjustedY});
 
-  // if (graphPoints.length > (width / interval)) {
-  // if (graphPoints.length > maxPointsLength) {
   if (graphPoints.length > 2) {
     graphPoints.shift();
   }
 }
 
-// function updateGraphPoints(interval = 1) {
-//   if (frameCount % interval !== 0) return;
-
-//   let waveform = fft.waveform();
-//   let sampleIndex = Math.floor(waveform.length / 2);
-//   let sample = waveform[sampleIndex];
-
-//   let gx = cnt % width; // ✨ cnt 기준으로
-//   let gy = map(sample, -1, 1, height * 0.02, height * 0.8);
-//   gy -= height * 0.4;
-
-//   // ✨ 텍스트 인력 효과
-//   let attractPower = 8000; // 인력 크기 설정
-//   let attractRange = 40; // 인력 작용 범위
-//   let d = abs(gx - lastMessageX);
-
-//   if (d < attractRange && lastMessageX != null) {
-//     isInRange = true;
-//     let force = attractPower / (d + 10); // 거리 가까울수록 세게
-//     gy += force; // 위로 끌어당긴다 (반대로 force를 더하면 아래로 밀림)
-//   } else {
-//     isInRange = false;
-//   }
-
-
-//   if (gx != 0) graphPoints.push({x: gx, y: gy});
-
-//   if (graphPoints.length > width) {
-//     graphPoints.shift();
-//   }
-// }
-
-
 function drawGraphPoints() {
 
   let rad = 1;
-  // if (!isInRange) { fill(0, 100, 200, 5);
-  // } else { fill(0, 100, 200, 10);}
 
   fill(0, 100, 200, 10);
   stroke(0, 200, 200, 20);
 
-  // noStroke();
-  // noFill();
-  // beginShape();
-
   for (let pt of graphPoints) {
-  //   vertex(pt.x, pt.y);
     strokeWeight(0.1);
     ellipse(pt.x, pt.y, pt.y * rad, pt.y * rad);
     // strokeWeight(1);
     // line(pt.x, pt.y, pt.x + pt.y * 10, pt.y + pt.y * 10);
   }
-  // endShape();
-
-  // if (graphPoints.length < 2) return;
-
-  // beginShape();
-  // for (let i = 0; i < graphPoints.length; i++) {
-  //   let pt = graphPoints[i];
-
-  //   // 되감기 감지: x 좌표가 이전 점보다 작아졌다면 끊기
-  //   if (i > 0 && pt.x < graphPoints[i - 1].x) {
-  //     endShape();       // 현재 곡선 마감
-
-  //     // ✨ 새로운 색으로 변경
-  //     // stroke(currentColor);
-
-  //     beginShape();     // 새로운 곡선 시작
-  //     curveVertex(pt.x, pt.y); // 중단점부터 이어 그림
-  //   }
-
-  //   curveVertex(pt.x, pt.y);
-  // }
-  // endShape();
 
 }
 
