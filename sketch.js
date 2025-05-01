@@ -376,7 +376,7 @@ function drawCurrentMessage() {
     textFont(/[ㄱ-ㆎ|가-힣]/.test(currentMessage) ? koreanFont : englishFont);
     fill(0, 0, 0, constrain((frameCount-lastMessageFrame)/messagePrintFrames * 255, 0, 255));
     noStroke();
-    textSize(24);
+    textSize(25);
     textAlign(LEFT, CENTER);
     text(currentMessage, 0, 0);
     pop();
