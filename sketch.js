@@ -14,7 +14,7 @@ let visualizeMode = 0;
 let useMicInput = false;
 let micAmp = 0.1;
 
-let graphPointUpdateInterval = 20;
+let graphPointUpdateInterval = 2;
 let startTime;
 let lastMessageFrame = -1000;
 let lastMessageX = null;
@@ -22,20 +22,31 @@ let currentMessage = "";
 
 let firstMessageDelaySeconds = 30; // ✨ 첫 문장은 30초 후 등장
 let messageIntervalSeconds = 10;
-let messagePrintFrames = 20;
+let messagePrintFrames = 30;
 let sentences = [];
 let sentenceIndex = 0;
 let jitterAngle = 0;
 let isInRange = false;
+let loopCount = 0;
 
-let koreanFont, englishFont;
+let koreanFont, englishFont, englishFont2, englishFont3;
 let graphPoints = []; // 🆕 파란 선 점들을 담는 배열
+
+
+let fadeOutCounter = 0;
+
+let fpsPerLoop = 0;
+let maxLoopCount = 0;
+let pointsPerLoop = 0;
+let maxPointsLength = 0;
 
 
 function preload() {
   sentences = loadStrings("sentences.txt?" + millis());
   koreanFont = loadFont("fonts/AppleMyungjo.ttf");
   englishFont = loadFont("fonts/Times New Roman.ttf");
+  englishFont2 = loadFont("fonts/NotoSansKR-Thin.otf");
+  englishFont3 = loadFont("fonts/NotoSansDisplay-VariableFont_wdth,wght.ttf");
 }
 
 function setup() {
@@ -46,6 +57,14 @@ function setup() {
 
   visualizeMul = width;
   fft = new p5.FFT(0.9, bands);
+
+  fpsPerLoop = width;
+  maxLoopCount = sentences.length * fps * messageIntervalSeconds / fpsPerLoop;
+  pointsPerLoop = fpsPerLoop / graphPointUpdateInterval; 
+  maxPointsLength = maxLoopCount * pointsPerLoop;
+
+  graphPoints.push({x: 0, y: 6});
+
 
   if (useMicInput) {
     mic = new p5.AudioIn();
@@ -65,8 +84,18 @@ function setup() {
 
     let context = getAudioContext();
     source = context.createMediaElementSource(audio);
-    fft.setInput(source);
-    source.connect(context.destination);
+
+    // ✨ Gain 노드 1: 청취용
+    let gainOut = context.createGain();
+    gainOut.gain.value = 1.0;
+    source.connect(gainOut);
+    gainOut.connect(context.destination);
+
+    // ✨ Gain 노드 2: 분석용
+    let gainFFT = context.createGain();
+    gainFFT.gain.value = 0.2;
+    source.connect(gainFFT);
+    fft.setInput(gainFFT);
   }
 }
 
@@ -120,15 +149,27 @@ function draw() {
   spectrum = fft.analyze();
 
   if (visualizeMode === 0) {
-    drawGraphPoints();
     drawMainVisualization();
     updateGraphPoints(graphPointUpdateInterval);
+    drawGraphPoints();
     drawCurrentMessage();
 
     if (cnt >= width) {
-      background(bgColor, 20);
+      fadeOutCounter = 30;  // ✨ 20프레임에 걸쳐 점진적으로 배경 지우기 시작
       cnt = 0;
+      loopCount++;
     }
+
+    if (fadeOutCounter > 0) {
+      background(bgColor, 2/3);  // ✨ alpha 1씩 누적
+      fadeOutCounter--;
+    }
+
+    // if (cnt >= width) {
+    //   background(bgColor, 20);
+    //   cnt = 0;
+    // }
+
   }
 }
 
@@ -136,29 +177,43 @@ function drawStartScreen() {
   background(bgColor);
   fill(255);
   textAlign(CENTER, CENTER);
+  strokeWeight(0.1);
+
+  textFont(englishFont2); // ✅ 여기에서 폰트 적용
+
+  let workTitle = "Some-bodies are listening, too";
+  textSize(24);
+  text(workTitle, width/2, height/2 - 220);
+
+  textSize(22);
+  let nowStr = getFormattedKoreanTime();
+  text(nowStr, width/2, height/2 + 40);
 
   textSize(24);
-  let nowStr = getFormattedKoreanTime();
-  text(nowStr, width/2, height/2 - 40);
-
-  textSize(28);
-  let liveText = "Live...";
+  let liveText = "Live";
   let textW = textWidth(liveText);
   let boxW = textW + 40;
   let boxH = 42;
   let boxX = width/2 - boxW/2;
-  let boxY = height/2;
+  let boxY = height/2 + 100;
 
   stroke(255);
+  strokeWeight(2);
   noFill();
-  rect(boxX, boxY, boxW, boxH, 16);
+  rect(boxX, boxY, boxW, boxH, 20);
 
+  strokeWeight(0.1);
   fill(255);
-  text(liveText, width/2, boxY + boxH/2 + 3);
+  text(liveText, width/2, boxY + boxH/4 + 5);
 
   if (mouseX > boxX && mouseX < boxX+boxW && mouseY > boxY && mouseY < boxY+boxH) {
     cursor(HAND);
   }
+
+  strokeWeight(0.3);
+  textSize(18);
+  let browserText = "* This site works only on desktop versions of Firefox and Chrome";
+  text(browserText, width/2, height/2 + 230);
 }
 
 function drawMainVisualization() {
@@ -185,16 +240,31 @@ function drawMainVisualization() {
 function updateGraphPoints(interval = 1) {
   if (frameCount % interval !== 0) return; // ✨ interval 프레임마다만 추가!
 
+  // midpoint
+  // let waveform = fft.waveform();
+  // let sampleIndex = Math.floor(waveform.length / 2);
+  // let sample = waveform[sampleIndex];
+
+  // average
+  // let waveform = fft.waveform();
+  // let sample = waveform.reduce((a, b) => a + b, 0) / waveform.length;
+
+  // peak
   let waveform = fft.waveform();
-  let sampleIndex = Math.floor(waveform.length / 2);
-  let sample = waveform[sampleIndex];
+  let sample = waveform.reduce((max, val) => (val > max ? val : max), -Infinity);
 
-  let gx = frameCount % (width + 1);
-  let gy = map(sample, -1, 1, height * 0.02, height * 0.8);
+  let gx = frameCount % (width + 1) + random(-1, 1);
+  let sampleScaled = map(abs(sample), 0, 1, 0, height * 1);
+  let gy = sampleScaled; 
+  let adjustedY = gy; 
+  // let adjustedY = gy + (loopCount * 10);
 
-  graphPoints.push({x: gx, y: gy - height*0.4});
+  // print("sample: ", sample, " gx: ", gx, " gy: ", gy);
+  graphPoints.push({x: gx, y: adjustedY});
 
-  if (graphPoints.length > width) {
+  // if (graphPoints.length > (width / interval)) {
+  // if (graphPoints.length > maxPointsLength) {
+  if (graphPoints.length > 2) {
     graphPoints.shift();
   }
 }
@@ -233,21 +303,48 @@ function updateGraphPoints(interval = 1) {
 
 
 function drawGraphPoints() {
-  // stroke(0, 100, 200, 10);
 
-  let rad = 3;
-  if (!isInRange) { fill(0, 100, 200, 5);
-  } else { fill(0, 100, 200, 10);}
+  let rad = 1;
+  // if (!isInRange) { fill(0, 100, 200, 5);
+  // } else { fill(0, 100, 200, 10);}
 
-  // strokeWeight(0.5);
-  noStroke();
+  fill(0, 100, 200, 10);
+  stroke(0, 200, 200, 20);
+
+  // noStroke();
   // noFill();
   // beginShape();
+
   for (let pt of graphPoints) {
-    // vertex(pt.x, pt.y);
-    ellipse(pt.x, pt.y, rad, rad);
+  //   vertex(pt.x, pt.y);
+    strokeWeight(0.1);
+    ellipse(pt.x, pt.y, pt.y * rad, pt.y * rad);
+    // strokeWeight(1);
+    // line(pt.x, pt.y, pt.x + pt.y * 10, pt.y + pt.y * 10);
   }
   // endShape();
+
+  // if (graphPoints.length < 2) return;
+
+  // beginShape();
+  // for (let i = 0; i < graphPoints.length; i++) {
+  //   let pt = graphPoints[i];
+
+  //   // 되감기 감지: x 좌표가 이전 점보다 작아졌다면 끊기
+  //   if (i > 0 && pt.x < graphPoints[i - 1].x) {
+  //     endShape();       // 현재 곡선 마감
+
+  //     // ✨ 새로운 색으로 변경
+  //     // stroke(currentColor);
+
+  //     beginShape();     // 새로운 곡선 시작
+  //     curveVertex(pt.x, pt.y); // 중단점부터 이어 그림
+  //   }
+
+  //   curveVertex(pt.x, pt.y);
+  // }
+  // endShape();
+
 }
 
 function drawCurrentMessage() {
@@ -284,6 +381,7 @@ function drawCurrentMessage() {
     text(currentMessage, 0, 0);
     pop();
   }
+  // print("sentenceIndex: ", sentenceIndex);
 }
 
 function maxIndex(arr) {
