@@ -93,7 +93,7 @@ function setup() {
 
     // ✨ Gain 노드 2: 분석용
     let gainFFT = context.createGain();
-    gainFFT.gain.value = 0.2;
+    gainFFT.gain.value = 0.6;
     source.connect(gainFFT);
     fft.setInput(gainFFT);
   }
