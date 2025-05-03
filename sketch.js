@@ -1,6 +1,4 @@
-// ✅ 전체 코드: graphPoints 방식으로 상단 파란선 추가! 
-
-let audio, mic, fft, source;
+let audio, mic, fft, source, gainOut;
 let spectrum = [];
 let cnt = 0;
 let bands = 1024;
@@ -20,7 +18,7 @@ let lastMessageFrame = -1000;
 let lastMessageX = null;
 let currentMessage = "";
 
-let firstMessageDelaySeconds = 30; // ✨ 첫 문장은 30초 후 등장
+let firstMessageDelaySeconds = 30;
 let messageIntervalSeconds = 10;
 let messagePrintFrames = 30;
 let sentences = [];
@@ -29,24 +27,16 @@ let jitterAngle = 0;
 let isInRange = false;
 let loopCount = 0;
 
-let koreanFont, englishFont, englishFont2, englishFont3;
-let graphPoints = []; // 🆕 파란 선 점들을 담는 배열
-
+let koreanFont, englishFont, englishFont2;
+let graphPoints = [];
 
 let fadeOutCounter = 0;
-
-// let fpsPerLoop = 0;
-// let maxLoopCount = 0;
-// let pointsPerLoop = 0;
-// let maxPointsLength = 0;
-
 
 function preload() {
   sentences = loadStrings("sentences.txt?" + millis());
   koreanFont = loadFont("fonts/AppleMyungjo.ttf");
   englishFont = loadFont("fonts/Times New Roman.ttf");
   englishFont2 = loadFont("fonts/NotoSansKR-Thin.otf");
-  // englishFont3 = loadFont("fonts/NotoSansDisplay-VariableFont_wdth,wght.ttf");
 }
 
 function setup() {
@@ -58,13 +48,7 @@ function setup() {
   visualizeMul = width;
   fft = new p5.FFT(0.9, bands);
 
-  // fpsPerLoop = width;
-  // maxLoopCount = sentences.length * fps * messageIntervalSeconds / fpsPerLoop;
-  // pointsPerLoop = fpsPerLoop / graphPointUpdateInterval; 
-  // maxPointsLength = maxLoopCount * pointsPerLoop;
-
   graphPoints.push({x: 0, y: 6});
-
 
   if (useMicInput) {
     mic = new p5.AudioIn();
@@ -85,15 +69,13 @@ function setup() {
     let context = getAudioContext();
     source = context.createMediaElementSource(audio);
 
-    // ✨ Gain 노드 1: 청취용
-    let gainOut = context.createGain();
-    gainOut.gain.value = 1.0;
+    gainOut = context.createGain();
+    gainOut.gain.value = 0.0; // 처음에는 무음으로 시작
     source.connect(gainOut);
     gainOut.connect(context.destination);
 
-    // ✨ Gain 노드 2: 분석용
     let gainFFT = context.createGain();
-    gainFFT.gain.value = 0.8;
+    gainFFT.gain.value = 0.5;
     source.connect(gainFFT);
     fft.setInput(gainFFT);
   }
@@ -115,9 +97,8 @@ function touchStarted() {
 function startAudio() {
   background(bgColor);
   if (!useMicInput) {
-    audio.volume = 0;
     audio.play();
-    fadeInAudio(8000);
+    fadeInAudio(8000); // 실제로 gainOut을 점점 키움
   }
   started = true;
   startTime = new Date();
@@ -131,14 +112,13 @@ function fadeInAudio(durationMillis = 3000) {
   let fadeInterval = setInterval(() => {
     currentStep++;
     let vol = currentStep / steps;
-    audio.volume = constrain(vol, 0, 1);
+    gainOut.gain.value = constrain(vol, 0, 1);
     if (currentStep >= steps) clearInterval(fadeInterval);
   }, stepTime);
 }
 
 function draw() {
   cursor(ARROW);
-
   if (!started) {
     drawStartScreen();
     return;
@@ -155,13 +135,13 @@ function draw() {
     drawCurrentMessage();
 
     if (cnt >= width) {
-      fadeOutCounter = 30;  // ✨ 30프레임에 걸쳐 점진적으로 배경 지우기 시작
+      fadeOutCounter = 30;
       cnt = 0;
       loopCount++;
     }
 
     if (fadeOutCounter > 0) {
-      background(bgColor, 2/3);  // ✨ alpha 2/3씩 누적
+      background(bgColor, 2 / 3);
       fadeOutCounter--;
     }
   }
@@ -175,21 +155,19 @@ function drawStartScreen() {
 
   textFont(englishFont);
   textSize(30);
-  let workTitle = "Some-bodies are listening, too";
-  text(workTitle, width/2, height/2 - 220);
+  text("Some-bodies are listening, too", width / 2, height / 2 - 220);
 
   textFont(englishFont2);
   textSize(22);
-  let nowStr = getFormattedKoreanTime();
-  text(nowStr, width/2, height/2 + 40);
+  text(getFormattedKoreanTime(), width / 2, height / 2 + 40);
 
   textSize(24);
   let liveText = "Live";
   let textW = textWidth(liveText);
   let boxW = textW + 40;
   let boxH = 42;
-  let boxX = width/2 - boxW/2;
-  let boxY = height/2 + 100;
+  let boxX = width / 2 - boxW / 2;
+  let boxY = height / 2 + 100;
 
   stroke(255);
   strokeWeight(2);
@@ -198,16 +176,15 @@ function drawStartScreen() {
 
   strokeWeight(0.1);
   fill(255);
-  text(liveText, width/2, boxY + boxH/4 + 5);
+  text(liveText, width / 2, boxY + boxH / 4 + 5);
 
-  if (mouseX > boxX && mouseX < boxX+boxW && mouseY > boxY && mouseY < boxY+boxH) {
+  if (mouseX > boxX && mouseX < boxX + boxW && mouseY > boxY && mouseY < boxY + boxH) {
     cursor(HAND);
   }
 
   strokeWeight(0.3);
   textSize(18);
-  let browserText = "* This site works only on desktop versions of Firefox and Chrome";
-  text(browserText, width/2, height/2 + 230);
+  text("* This site works only on desktop versions of Firefox and Chrome", width / 2, height / 2 + 230);
 }
 
 function drawMainVisualization() {
@@ -232,29 +209,14 @@ function drawMainVisualization() {
 }
 
 function updateGraphPoints(interval = 1) {
-  if (frameCount % interval !== 0) return; // ✨ interval 프레임마다만 추가!
+  if (frameCount % interval !== 0) return;
 
-  // midpoint
-  // let waveform = fft.waveform();
-  // let sampleIndex = Math.floor(waveform.length / 2);
-  // let sample = waveform[sampleIndex];
-
-  // average
-  // let waveform = fft.waveform();
-  // let sample = waveform.reduce((a, b) => a + b, 0) / waveform.length;
-
-  // peak
   let waveform = fft.waveform();
   let sample = waveform.reduce((max, val) => (val > max ? val : max), -Infinity);
 
   let gx = frameCount % (width + 1) + random(-1, 1);
-  let sampleScaled = map(abs(sample), 0, 1, 0, height * 1);
-  let gy = sampleScaled; 
-  let adjustedY = gy; 
-  // let adjustedY = gy + (loopCount * 10);
-
-  // print("sample: ", sample, " gx: ", gx, " gy: ", gy);
-  graphPoints.push({x: gx, y: adjustedY});
+  let gy = map(abs(sample), 0, 1, 0, height);
+  graphPoints.push({x: gx, y: gy});
 
   if (graphPoints.length > 2) {
     graphPoints.shift();
@@ -262,23 +224,18 @@ function updateGraphPoints(interval = 1) {
 }
 
 function drawGraphPoints() {
-
   let rad = 1;
-
   fill(0, 100, 200, 10);
   stroke(0, 200, 200, 20);
 
   for (let pt of graphPoints) {
     strokeWeight(0.1);
     ellipse(pt.x, pt.y, pt.y * rad, pt.y * rad);
-    // strokeWeight(1);
-    // line(pt.x, pt.y, pt.x + pt.y * 10, pt.y + pt.y * 10);
   }
-
 }
 
 function drawCurrentMessage() {
-  let elapsedSeconds = (millis() / 1000);
+  let elapsedSeconds = millis() / 1000;
 
   if (sentenceIndex === 0) {
     if (elapsedSeconds >= firstMessageDelaySeconds && currentMessage === "") {
@@ -301,17 +258,16 @@ function drawCurrentMessage() {
 
   if (frameCount - lastMessageFrame < messagePrintFrames) {
     push();
-    translate(lastMessageX, height-22);
+    translate(lastMessageX, height - 22);
     rotate(-HALF_PI + jitterAngle);
     textFont(/[ㄱ-ㆎ|가-힣]/.test(currentMessage) ? koreanFont : englishFont);
-    fill(0, 0, 0, constrain((frameCount-lastMessageFrame)/messagePrintFrames * 255, 0, 255));
+    fill(0, 0, 0, constrain((frameCount - lastMessageFrame) / messagePrintFrames * 255, 0, 255));
     noStroke();
     textSize(25);
     textAlign(LEFT, CENTER);
     text(currentMessage, 0, 0);
     pop();
   }
-  // print("sentenceIndex: ", sentenceIndex);
 }
 
 function maxIndex(arr) {
@@ -329,5 +285,5 @@ function maxIndex(arr) {
 function getFormattedKoreanTime() {
   let now = new Date();
   now.setUTCHours(now.getUTCHours() + 9);
-  return `UTC+9 ${now.getUTCFullYear()}-${nf(now.getUTCMonth()+1,2)}-${nf(now.getUTCDate(),2)} ${nf(now.getUTCHours(),2)}:${nf(now.getUTCMinutes(),2)}:${nf(now.getUTCSeconds(),2)}`;
+  return `UTC+9 ${now.getUTCFullYear()}-${nf(now.getUTCMonth() + 1, 2)}-${nf(now.getUTCDate(), 2)} ${nf(now.getUTCHours(), 2)}:${nf(now.getUTCMinutes(), 2)}:${nf(now.getUTCSeconds(), 2)}`;
 }
