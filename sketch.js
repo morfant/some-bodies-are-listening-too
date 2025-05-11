@@ -33,7 +33,8 @@ let graphPoints = [];
 let fadeOutCounter = 0;
 
 function preload() {
-  sentences = loadStrings("sentences.txt?" + millis());
+  // Load the sentences from the text file
+  sentences = loadStrings("sentences_KOR.txt?" + millis());
   koreanFont = loadFont("fonts/AppleMyungjo.ttf");
   englishFont = loadFont("fonts/Times New Roman.ttf");
   englishFont2 = loadFont("fonts/NotoSansKR-Thin.otf");
