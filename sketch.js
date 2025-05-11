@@ -18,7 +18,7 @@ let lastMessageFrame = -1000;
 let lastMessageX = null;
 let currentMessage = "";
 
-let firstMessageDelaySeconds = 30;
+let firstMessageDelaySeconds = 60;
 let messageIntervalSeconds = 10;
 let messagePrintFrames = 30;
 let sentences = [];
