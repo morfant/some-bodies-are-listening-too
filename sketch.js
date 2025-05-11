@@ -11,6 +11,7 @@ let fps = 30;
 let visualizeMode = 0;
 let useMicInput = false;
 let micAmp = 0.1;
+let theBlue, theBlueTop;
 
 let graphPointUpdateInterval = 1;
 let startTime;
@@ -48,6 +49,11 @@ function setup() {
 
   visualizeMul = width;
   fft = new p5.FFT(0.9, bands);
+
+  theBlue = color(0, 100, 200, 50);
+  // theBlue = color(0, 0, 0, 50);
+  theBlueTop = color(0, 100, 200, 10);
+  // theBlueTop = color(255, 255, 255, 10);
 
   graphPoints.push({x: 0, y: 6});
 
@@ -194,7 +200,8 @@ function drawMainVisualization() {
 
   for (let i = 0; i < bands; i++) {
     noStroke();
-    fill(255);
+    // fill(255);
+    fill(theBlue);
     let y = height - i;
     let x = constrain(width - cnt, 0, width);
     let valMapped = spectrum[i] * visualizeMul * i * random(2);
@@ -226,8 +233,8 @@ function updateGraphPoints(interval = 1) {
 
 function drawGraphPoints() {
   let rad = 1;
-  fill(0, 100, 200, 10);
-  stroke(0, 200, 200, 20);
+  fill(theBlueTop);
+  stroke(theBlueTop);
 
   for (let pt of graphPoints) {
     strokeWeight(0.1);
@@ -263,8 +270,11 @@ function drawCurrentMessage() {
     rotate(-HALF_PI + jitterAngle);
     textFont(/[ㄱ-ㆎ|가-힣]/.test(currentMessage) ? koreanFont : englishFont);
     fill(0, 0, 0, constrain((frameCount - lastMessageFrame) / messagePrintFrames * 255, 0, 255));
+    // fill(255, 255, 255, constrain((frameCount - lastMessageFrame) / messagePrintFrames * 255, 0, 255));
+    // fill(255, 255, 255, 8);
+    // fill(0, 0, 0, 20);
     noStroke();
-    textSize(25);
+    textSize(24);
     textAlign(LEFT, CENTER);
     text(currentMessage, 0, 0);
     pop();
