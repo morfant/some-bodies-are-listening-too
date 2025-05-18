@@ -170,7 +170,7 @@ function drawStartScreen() {
   text("Jiyeon Kim, Gangil Yi", width / 2, height / 2 - 150);
 
   textFont(englishFont2);
-  textSize(22);
+  textSize(15);
   text(getFormattedKoreanTime(), width / 2, height / 2 + 40);
 
   textSize(24);
