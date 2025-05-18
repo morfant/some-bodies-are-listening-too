@@ -164,6 +164,11 @@ function drawStartScreen() {
   textSize(30);
   text("Some-bodies are listening, too", width / 2, height / 2 - 220);
 
+  // Author names
+  textFont(englishFont2);
+  textSize(20);
+  text("Jiyeon Kim, Gangil Yi", width / 2, height / 2 - 150);
+
   textFont(englishFont2);
   textSize(22);
   text(getFormattedKoreanTime(), width / 2, height / 2 + 40);
