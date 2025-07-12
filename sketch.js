@@ -33,6 +33,10 @@ let graphPoints = [];
 
 let fadeOutCounter = 0;
 
+let aspectRatio = 1280 / 512;
+let canvas;
+let fullscreenButton;
+
 function preload() {
   // Load the sentences from the text file
   sentences = loadStrings("sentences_KOR.txt?" + millis());
@@ -42,8 +46,23 @@ function preload() {
 }
 
 function setup() {
-  createCanvas(1280, 512);
+    // 비율을 유지한 크기 계산
+  let w = windowWidth;
+  let h = windowHeight;
+  if (w / h > aspectRatio) {
+    w = h * aspectRatio;
+  } else {
+    h = w / aspectRatio;
+  }
+
+  canvas = createCanvas(w, h);
+  canvas.position((windowWidth - w) / 2, (windowHeight - h) / 2);  // 화면 중앙 정렬
+  canvas.style('display', 'block');
   background(bgColor);
+
+  // createCanvas(1280, 512);
+  // createCanvas(windowWidth, windowHeight);
+  // background(bgColor);
   noStroke();
   frameRate(fps);
 
@@ -86,6 +105,39 @@ function setup() {
     source.connect(gainFFT);
     fft.setInput(gainFFT);
   }
+
+  // fullscreenButton
+  // fullscreenButton = createButton('Toggle Fullscreen');
+  // fullscreenButton.position(20, 20); // 좌측 상단에 위치
+  // fullscreenButton.style('padding', '8px 16px');
+  // fullscreenButton.style('font-size', '16px');
+  // fullscreenButton.mousePressed(toggleFullscreen);
+
+}
+
+function toggleFullscreen() {
+  let fs = fullscreen();
+  fullscreen(!fs); // 현재 상태의 반대로 설정
+}
+
+function keyPressed() {
+  if (key === 'f' || key === 'F') {
+    toggleFullscreen();
+  }
+}
+
+function windowResized() {
+  let w = windowWidth;
+  let h = windowHeight;
+  if (w / h > aspectRatio) {
+    w = h * aspectRatio;
+  } else {
+    h = w / aspectRatio;
+  }
+
+  resizeCanvas(w, h);
+  canvas.position((windowWidth - w) / 2, (windowHeight - h) / 2);
+  background(bgColor);
 }
 
 function mousePressed() {
